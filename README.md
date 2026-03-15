@@ -2,8 +2,26 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status: Phase 1 Complete](https://img.shields.io/badge/status-Phase%201%20Complete-brightgreen.svg)](ROADMAP.md)
 
 **GeosclawAI** is a powerful, autonomous AI agent combining the best features of top AI coding and workflow agents – Claude Code, OpenClaw, and more – into a single open-source framework.
+
+> **⏱ Completion estimate:** The core agent is fully working today (Phase 1 ✅).  
+> Full v1.0 production readiness is ~**5–7 weeks** away.  
+> See the [**📍 Roadmap**](ROADMAP.md) for a detailed breakdown of what's done and what's planned.
+
+---
+
+## 📍 Current Status
+
+| Phase | Description | Status |
+|---|---|---|
+| **Phase 1** | Core foundation (providers, tools, CLI, API, memory) | ✅ **Complete** |
+| **Phase 2** | Enhanced capabilities (more providers, Git/Browser skills, real streaming) | 🔄 ~2–3 weeks |
+| **Phase 3** | Production readiness (Web UI, vector memory, Docker, CI, multi-user API) | 🔲 ~3–4 weeks |
+| **Phase 4** | Advanced features (messaging integrations, scheduler, skill marketplace) | 🔲 post-v1.0 |
+
+Full details and per-feature checklists are in [**ROADMAP.md**](ROADMAP.md).
 
 ---
 
@@ -324,6 +342,12 @@ geosclaw-ai/
 ├── setup.py
 └── pyproject.toml
 ```
+
+---
+
+## 📍 Roadmap
+
+See [**ROADMAP.md**](ROADMAP.md) for the full plan, phase-by-phase feature checklists, and time estimates.
 
 ---
 
