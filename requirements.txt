@@ -1,0 +1,38 @@
+# Core AI providers
+anthropic>=0.40.0
+openai>=1.50.0
+google-genai>=1.0.0
+
+# Web framework for API server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+
+# CLI interface
+click>=8.1.0
+rich>=13.9.0
+
+# HTTP client for web tools
+httpx>=0.28.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# File operations
+pathspec>=0.12.1
+
+# Code analysis
+pygments>=2.18.0
+
+# Search / web tools
+duckduckgo-search>=7.0.0
+
+# WebSocket support for streaming API
+websockets>=14.0
+
+# Testing
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+pytest-cov>=6.0.0
+httpx  # also used for test client
