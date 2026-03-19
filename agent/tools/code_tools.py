@@ -233,3 +233,204 @@ class CodeFormatTool(BaseTool):
             return ToolResult(
                 tool_name=self.name, success=False, output="", error=str(exc)
             )
+
+
+class RunPythonTool(BaseTool):
+    """Execute a Python code snippet and return stdout/stderr."""
+
+    @property
+    def name(self) -> str:
+        return "run_python"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Execute a Python code snippet in a subprocess and return its output. "
+            "Useful for calculations, data processing, or testing small code snippets."
+        )
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "Python code to execute",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Execution timeout in seconds (default: 30)",
+                    "default": 30,
+                },
+            },
+            "required": ["code"],
+        }
+
+    async def execute(self, **kwargs: Any) -> ToolResult:
+        import asyncio
+        import sys
+
+        code: str = kwargs.get("code", "")
+        timeout: int = int(kwargs.get("timeout", 30))
+
+        if not code.strip():
+            return ToolResult(
+                tool_name=self.name,
+                success=False,
+                output="",
+                error="No code provided.",
+            )
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                "-c",
+                code,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=settings.workspace_dir,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(), timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.communicate()
+                return ToolResult(
+                    tool_name=self.name,
+                    success=False,
+                    output="",
+                    error=f"Code execution timed out after {timeout}s.",
+                )
+
+            out = stdout.decode(errors="replace")
+            err = stderr.decode(errors="replace")
+            combined = ""
+            if out:
+                combined += out
+            if err:
+                combined += ("\n" if combined else "") + "[stderr]\n" + err
+
+            return ToolResult(
+                tool_name=self.name,
+                success=(proc.returncode == 0),
+                output=combined.strip() or "(no output)",
+                error=None if proc.returncode == 0 else f"Exited with code {proc.returncode}",
+            )
+        except OSError as exc:
+            return ToolResult(
+                tool_name=self.name, success=False, output="", error=str(exc)
+            )
+
+
+class RunTestsTool(BaseTool):
+    """Run the project's test suite using pytest and return results."""
+
+    @property
+    def name(self) -> str:
+        return "run_tests"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Run pytest in the workspace (or a specific path) and return a "
+            "structured summary of test results including pass/fail counts and "
+            "failure details."
+        )
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Path to test file/directory (default: workspace root)",
+                    "default": "",
+                },
+                "args": {
+                    "type": "string",
+                    "description": "Extra pytest arguments (e.g. '-v -k test_foo')",
+                    "default": "",
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Overall timeout in seconds (default: 120)",
+                    "default": 120,
+                },
+            },
+            "required": [],
+        }
+
+    async def execute(self, **kwargs: Any) -> ToolResult:
+        import asyncio
+        import shlex
+        import shutil
+        import sys
+
+        test_path: str = kwargs.get("path", "")
+        extra_args: str = kwargs.get("args", "")
+        timeout: int = int(kwargs.get("timeout", 120))
+
+        if not shutil.which("pytest") and not _has_pytest():
+            return ToolResult(
+                tool_name=self.name,
+                success=False,
+                output="",
+                error="pytest is not installed. Run: pip install pytest",
+            )
+
+        cmd = [sys.executable, "-m", "pytest", "--tb=short", "-q"]
+        if test_path:
+            cmd.append(test_path)
+        if extra_args:
+            cmd.extend(shlex.split(extra_args))
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=settings.workspace_dir,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(), timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.communicate()
+                return ToolResult(
+                    tool_name=self.name,
+                    success=False,
+                    output="",
+                    error=f"Test run timed out after {timeout}s.",
+                )
+
+            out = stdout.decode(errors="replace")
+            err = stderr.decode(errors="replace")
+            combined = out
+            if err.strip():
+                combined += "\n[stderr]\n" + err
+
+            return ToolResult(
+                tool_name=self.name,
+                success=(proc.returncode == 0),
+                output=combined.strip() or "(no output)",
+                error=None if proc.returncode == 0 else f"Tests failed (exit code {proc.returncode})",
+            )
+        except OSError as exc:
+            return ToolResult(
+                tool_name=self.name, success=False, output="", error=str(exc)
+            )
+
+
+def _has_pytest() -> bool:
+    try:
+        import importlib.util
+
+        return importlib.util.find_spec("pytest") is not None
+    except Exception:
+        return False

@@ -1,6 +1,7 @@
 # Core AI providers
 anthropic>=0.40.0
 openai>=1.50.0
+google-genai>=1.0.0
 
 # Web framework for API server
 fastapi>=0.115.0

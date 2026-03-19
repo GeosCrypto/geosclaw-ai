@@ -2,12 +2,12 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: Phase 1 Complete](https://img.shields.io/badge/status-Phase%201%20Complete-brightgreen.svg)](ROADMAP.md)
+[![Status: Phase 2 In Progress](https://img.shields.io/badge/status-Phase%202%20In%20Progress-blue.svg)](ROADMAP.md)
 
 **GeosclawAI** is a powerful, autonomous AI agent combining the best features of top AI coding and workflow agents – Claude Code, OpenClaw, and more – into a single open-source framework.
 
-> **⏱ Completion estimate:** The core agent is fully working today (Phase 1 ✅).  
-> Full v1.0 production readiness is ~**5–7 weeks** away.  
+> **⏱ Completion estimate:** Phase 2 is now actively running.  
+> Full v1.0 production readiness is ~**4–6 weeks** away.  
 > See the [**📍 Roadmap**](ROADMAP.md) for a detailed breakdown of what's done and what's planned.
 
 ---
@@ -17,7 +17,7 @@
 | Phase | Description | Status |
 |---|---|---|
 | **Phase 1** | Core foundation (providers, tools, CLI, API, memory) | ✅ **Complete** |
-| **Phase 2** | Enhanced capabilities (more providers, Git/Browser skills, real streaming) | 🔄 ~2–3 weeks |
+| **Phase 2** | Enhanced capabilities (Gemini/Ollama/Azure, Git skill, patch_file, run_python, run_tests, retry, parallel tools, token budget) | 🔄 **In Progress** |
 | **Phase 3** | Production readiness (Web UI, vector memory, Docker, CI, multi-user API) | 🔲 ~3–4 weeks |
 | **Phase 4** | Advanced features (messaging integrations, scheduler, skill marketplace) | 🔲 post-v1.0 |
 
@@ -29,16 +29,19 @@ Full details and per-feature checklists are in [**ROADMAP.md**](ROADMAP.md).
 
 | Feature | Description |
 |---|---|
-| 🔌 **Multi-provider** | Anthropic (Claude) and OpenAI (GPT-4o) out of the box |
-| 🛠️ **Rich tool system** | File I/O, shell execution, web search, code analysis, persistent memory |
+| 🔌 **Multi-provider** | Anthropic (Claude), OpenAI (GPT-4o), Google Gemini, Ollama (local), Azure OpenAI |
+| 🛠️ **Rich tool system** | File I/O, patch_file, shell execution, run_python, run_tests, web search, code analysis, persistent memory |
 | 🔄 **Agentic loop** | Autonomous multi-step task execution with tool calling |
+| ⚡ **Parallel tools** | Independent tool calls executed concurrently with `asyncio.gather` |
+| 🔁 **Retry / backoff** | Automatic exponential-backoff retry on provider rate limits and transient errors |
+| 💰 **Token budget** | Configurable per-run token budget with usage warnings |
 | 📡 **Streaming** | Real-time token streaming via CLI and REST API (Server-Sent Events) |
 | 🌐 **REST API** | FastAPI-based API server with session management |
 | 💬 **Interactive CLI** | Rich terminal interface with slash commands |
 | 🧠 **Memory** | Sliding-window conversation history + file-backed persistent memory |
-| 🧩 **Skills / Plugins** | Extend the agent with pluggable tool bundles |
+| 🧩 **Skills / Plugins** | Git skill built-in; extend with your own pluggable tool bundles |
 | 🔒 **Security** | Path-traversal protection, configurable shell execution, optional API key |
-| 🧪 **Tested** | 42+ unit and integration tests |
+| 🧪 **Tested** | 80+ unit and integration tests |
 
 ---
 
@@ -243,7 +246,10 @@ agent = Agent(provider=provider, tools=build_default_tools())
 | `search_files` | Regex search across files |
 | `delete_file` | Delete a file |
 | `create_directory` | Create a directory |
+| `patch_file` | Apply a unified diff (patch) to a file *(Phase 2)* |
 | `run_shell` | Execute a shell command |
+| `run_python` | Execute a Python code snippet in a subprocess *(Phase 2)* |
+| `run_tests` | Run pytest and return structured results *(Phase 2)* |
 | `web_search` | Search the web with DuckDuckGo |
 | `web_fetch` | Fetch a web page |
 | `analyze_code` | Analyse a source code file |
@@ -274,20 +280,57 @@ agent.register_skill(GitSkill())
 
 ---
 
+Also update the Skills section to reference the built-in Git skill:
+
+```python
+from agent.skills.git_skill import GitSkill
+
+# Use the built-in Git skill
+agent.register_skill(GitSkill())
+```
+
+Or create your own:
+
+```python
+from agent.skills.base_skill import BaseSkill
+from agent.tools.base import BaseTool
+
+class MySkill(BaseSkill):
+    name = "my_skill"
+    description = "Custom operations"
+
+    def get_tools(self) -> list[BaseTool]:
+        return [MyTool1(), MyTool2()]
+
+agent.register_skill(MySkill())
+```
+
+---
+
 ## ⚙️ Configuration
 
 All settings can be configured via environment variables (prefixed with `GEOSCLAW_`) or a `.env` file.
 
 | Variable | Default | Description |
 |---|---|---|
-| `GEOSCLAW_DEFAULT_PROVIDER` | `anthropic` | AI provider (`anthropic` or `openai`) |
+| `GEOSCLAW_DEFAULT_PROVIDER` | `anthropic` | AI provider: `anthropic`, `openai`, `gemini`, `ollama`, `azure_openai` |
 | `GEOSCLAW_ANTHROPIC_API_KEY` | _(empty)_ | Anthropic API key |
 | `GEOSCLAW_ANTHROPIC_MODEL` | `claude-opus-4-5` | Anthropic model name |
 | `GEOSCLAW_OPENAI_API_KEY` | _(empty)_ | OpenAI API key |
 | `GEOSCLAW_OPENAI_MODEL` | `gpt-4o` | OpenAI model name |
+| `GEOSCLAW_GEMINI_API_KEY` | _(empty)_ | Google Gemini API key *(Phase 2)* |
+| `GEOSCLAW_GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model name *(Phase 2)* |
+| `GEOSCLAW_OLLAMA_MODEL` | `llama3.2` | Ollama local model *(Phase 2)* |
+| `GEOSCLAW_OLLAMA_BASE_URL` | `http://localhost:11434/v1` | Ollama API URL *(Phase 2)* |
+| `GEOSCLAW_AZURE_OPENAI_API_KEY` | _(empty)_ | Azure OpenAI API key *(Phase 2)* |
+| `GEOSCLAW_AZURE_OPENAI_ENDPOINT` | _(empty)_ | Azure OpenAI resource endpoint *(Phase 2)* |
+| `GEOSCLAW_AZURE_OPENAI_DEPLOYMENT` | `gpt-4o` | Azure deployment name *(Phase 2)* |
 | `GEOSCLAW_MAX_ITERATIONS` | `50` | Max agentic loop iterations |
 | `GEOSCLAW_MAX_TOKENS` | `8192` | Max tokens per response |
 | `GEOSCLAW_TEMPERATURE` | `0.7` | Sampling temperature |
+| `GEOSCLAW_TOKEN_BUDGET` | `0` | Per-run token budget (0 = unlimited) *(Phase 2)* |
+| `GEOSCLAW_MAX_PROVIDER_RETRIES` | `3` | Max retries on transient errors *(Phase 2)* |
+| `GEOSCLAW_PARALLEL_TOOL_CALLS` | `true` | Execute independent tools in parallel *(Phase 2)* |
 | `GEOSCLAW_WORKSPACE_DIR` | `.` | Working directory for file ops |
 | `GEOSCLAW_MAX_FILE_SIZE_KB` | `512` | Max file size the agent may read |
 | `GEOSCLAW_ALLOW_SHELL` | `true` | Enable shell execution |
@@ -317,27 +360,32 @@ geosclaw-ai/
 ├── agent/
 │   ├── __init__.py          # Package metadata
 │   ├── config.py            # Configuration management
-│   ├── core.py              # Main Agent class + factory
+│   ├── core.py              # Main Agent class + factory (retry, parallel tools, token budget)
 │   ├── memory.py            # Conversation history
 │   ├── cli.py               # CLI (geosclaw command)
 │   ├── api.py               # FastAPI REST server
 │   ├── providers/
 │   │   ├── base.py          # Provider interface
 │   │   ├── anthropic_provider.py
-│   │   └── openai_provider.py
+│   │   ├── openai_provider.py
+│   │   ├── gemini_provider.py   # Phase 2 – Google Gemini
+│   │   ├── ollama_provider.py   # Phase 2 – Ollama (local models)
+│   │   └── azure_provider.py    # Phase 2 – Azure OpenAI
 │   ├── tools/
 │   │   ├── base.py          # Tool interface
-│   │   ├── file_tools.py    # File operations
+│   │   ├── file_tools.py    # File operations + patch_file (Phase 2)
 │   │   ├── shell_tools.py   # Shell execution
 │   │   ├── web_tools.py     # Web search & fetch
-│   │   ├── code_tools.py    # Code analysis & formatting
+│   │   ├── code_tools.py    # Code analysis, format, run_python, run_tests (Phase 2)
 │   │   └── memory_tools.py  # Persistent memory
 │   └── skills/
 │       ├── base_skill.py    # Skill plugin interface
+│       ├── git_skill.py     # Phase 2 – Git operations
 │       └── ...              # Add your own skills here
-├── tests/                   # Test suite (42+ tests)
+├── tests/                   # Test suite (80+ tests)
 ├── examples/                # Usage examples
 ├── .env.example             # Environment template
+├── ROADMAP.md               # Project roadmap & completion estimates
 ├── requirements.txt
 ├── setup.py
 └── pyproject.toml

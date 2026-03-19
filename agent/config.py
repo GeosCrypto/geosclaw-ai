@@ -19,7 +19,7 @@ class Config(BaseSettings):
     # ------------------------------------------------------------------ #
     # AI provider settings                                                 #
     # ------------------------------------------------------------------ #
-    default_provider: Literal["openai", "anthropic"] = Field(
+    default_provider: Literal["openai", "anthropic", "gemini", "ollama", "azure_openai"] = Field(
         default="anthropic",
         description="Default AI provider to use",
     )
@@ -37,6 +37,38 @@ class Config(BaseSettings):
     anthropic_model: str = Field(
         default="claude-opus-4-5",
         description="Default Anthropic model",
+    )
+
+    # Google Gemini
+    gemini_api_key: str = Field(default="", description="Google Gemini API key")
+    gemini_model: str = Field(
+        default="gemini-2.0-flash",
+        description="Default Gemini model",
+    )
+
+    # Ollama (local models)
+    ollama_model: str = Field(
+        default="llama3.2",
+        description="Default Ollama model name",
+    )
+    ollama_base_url: str = Field(
+        default="http://localhost:11434/v1",
+        description="Ollama API base URL",
+    )
+
+    # Azure OpenAI
+    azure_openai_api_key: str = Field(default="", description="Azure OpenAI API key")
+    azure_openai_endpoint: str = Field(
+        default="",
+        description="Azure OpenAI resource endpoint (e.g. https://<resource>.openai.azure.com/)",
+    )
+    azure_openai_deployment: str = Field(
+        default="gpt-4o",
+        description="Azure OpenAI deployment name",
+    )
+    azure_openai_api_version: str = Field(
+        default="2024-08-01-preview",
+        description="Azure OpenAI API version",
     )
 
     # ------------------------------------------------------------------ #
@@ -57,6 +89,41 @@ class Config(BaseSettings):
     streaming: bool = Field(
         default=True,
         description="Enable streaming responses",
+    )
+
+    # ------------------------------------------------------------------ #
+    # Token budget                                                         #
+    # ------------------------------------------------------------------ #
+    token_budget: int = Field(
+        default=0,
+        description=(
+            "Maximum total tokens per agent.run() call (0 = unlimited). "
+            "When the budget is approached the agent emits a warning."
+        ),
+    )
+    token_budget_warning_threshold: float = Field(
+        default=0.85,
+        description="Fraction of token_budget at which a warning is emitted (0.0-1.0)",
+    )
+
+    # ------------------------------------------------------------------ #
+    # Retry / reliability                                                  #
+    # ------------------------------------------------------------------ #
+    max_provider_retries: int = Field(
+        default=3,
+        description="Maximum retries on transient provider errors (0 = no retries)",
+    )
+    retry_base_delay: float = Field(
+        default=1.0,
+        description="Base delay in seconds for exponential backoff retries",
+    )
+
+    # ------------------------------------------------------------------ #
+    # Parallel tool execution                                              #
+    # ------------------------------------------------------------------ #
+    parallel_tool_calls: bool = Field(
+        default=True,
+        description="Execute independent tool calls in parallel using asyncio.gather",
     )
 
     # ------------------------------------------------------------------ #
@@ -130,6 +197,12 @@ class Config(BaseSettings):
             return bool(self.openai_api_key)
         if provider == "anthropic":
             return bool(self.anthropic_api_key)
+        if provider == "gemini":
+            return bool(self.gemini_api_key)
+        if provider == "ollama":
+            return True  # local, no API key needed
+        if provider == "azure_openai":
+            return bool(self.azure_openai_api_key and self.azure_openai_endpoint)
         return False
 
 

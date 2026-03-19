@@ -9,12 +9,12 @@ This document tracks what has been built, what is in progress, and what is plann
 | Phase | Focus | Estimate |
 |---|---|---|
 | ✅ **Phase 1** | Core foundation | **Complete** |
-| 🔄 **Phase 2** | Enhanced capabilities | ~2–3 weeks |
+| 🔄 **Phase 2** | Enhanced capabilities | **In Progress** (~1–2 weeks remaining) |
 | 🔲 **Phase 3** | Production readiness | ~3–4 weeks |
 | 🔲 **Phase 4** | Advanced & ecosystem features | ~4–6 weeks |
 
-> **Total remaining:** roughly **9–13 weeks** of focused development (solo developer pace).  
-> For a small team (2–3 contributors) this could be compressed to **4–6 weeks**.
+> **Total remaining:** roughly **8–12 weeks** of focused development (solo developer pace).  
+> For a small team (2–3 contributors) this could be compressed to **4–5 weeks**.
 
 A "fully featured" v1.0 release is targeted at the completion of Phase 3.  
 Phase 4 represents the long-term roadmap beyond v1.0.
@@ -69,33 +69,34 @@ The working skeleton of GeosclawAI is in place.
 
 ---
 
-## 🔄 Phase 2 – Enhanced Capabilities (~2–3 weeks)
+## 🔄 Phase 2 – Enhanced Capabilities (In Progress)
 
 These features bring GeosclawAI to parity with the most capable open-source agents.
 
 ### Additional Providers
-- [ ] **Google Gemini** provider (Gemini 1.5 Pro / 2.0 Flash)
-- [ ] **Ollama** provider — run local models (Llama 3, Mistral, Qwen, etc.)
-- [ ] **Azure OpenAI** provider — enterprise deployments
+- [x] **Google Gemini** provider (Gemini 2.0 Flash / any Gemini model) — `agent/providers/gemini_provider.py`
+- [x] **Ollama** provider — run local models (Llama 3, Mistral, Qwen, etc.) — `agent/providers/ollama_provider.py`
+- [x] **Azure OpenAI** provider — enterprise deployments — `agent/providers/azure_provider.py`
 
 ### Real Streaming
 - [ ] Replace the simulated chunked streaming in `Agent.stream()` with native provider-side SSE token streaming for true latency reduction
 
 ### New Built-in Skills
-- [ ] **Git skill** — `git_status`, `git_diff`, `git_commit`, `git_push`, `git_log`, `create_branch`
+- [x] **Git skill** — `git_status`, `git_diff`, `git_commit`, `git_push`, `git_log`, `git_create_branch` — `agent/skills/git_skill.py`
 - [ ] **Browser skill** — headless browsing with Playwright: `open_url`, `click`, `fill_form`, `take_screenshot`, `extract_text`
 - [ ] **Image/Vision skill** — pass screenshots or local images to vision-capable models
 
 ### Tool Improvements
-- [ ] `patch_file` — apply unified diffs rather than full rewrites
-- [ ] `run_python` — execute Python code in a sandbox with output capture
-- [ ] `run_tests` — run pytest / unittest and parse structured results
-- [ ] Parallel tool execution — run independent tool calls concurrently
+- [x] `patch_file` — apply unified diffs rather than full rewrites — added to `agent/tools/file_tools.py`
+- [x] `run_python` — execute Python code in a sandbox with output capture — added to `agent/tools/code_tools.py`
+- [x] `run_tests` — run pytest / unittest and parse structured results — added to `agent/tools/code_tools.py`
+- [ ] Parallel tool execution — run independent tool calls concurrently ✅ **done** (see Reliability below)
 
 ### Reliability
-- [ ] Automatic retry with exponential backoff on provider rate limits / transient errors
+- [x] Automatic retry with exponential backoff on provider rate limits / transient errors — `agent/core.py`
+- [x] Parallel tool execution — `asyncio.gather` for independent tool calls — `agent/core.py`
+- [x] Token budget tracking and warnings before hitting limits — `agent/core.py`
 - [ ] Structured error taxonomy (user errors vs. provider errors vs. tool errors)
-- [ ] Token budget tracking and warnings before hitting limits
 
 ---
 
@@ -182,4 +183,5 @@ The [Contributing Guide](CONTRIBUTING.md) (coming in Phase 3) will have full det
 
 | Version | Date | Notes |
 |---|---|---|
+| `0.2.0` | 2026-03-19 | Phase 2 started — Gemini/Ollama/Azure providers, Git skill, patch_file, run_python, run_tests, retry, parallel tool calls, token budget |
 | `0.1.0` | 2026-03-15 | Initial release — Phase 1 complete |
